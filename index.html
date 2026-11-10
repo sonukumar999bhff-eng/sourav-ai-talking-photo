@@ -1,118 +1,191 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sourav AI Talking Photo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sourav AI Studio</title>
 <style>
 *{box-sizing:border-box}
 body{
- margin:0;background:#0b1020;color:white;
- font-family:Arial,sans-serif;padding:20px;
+  margin:0;background:#0b1020;color:white;
+  font-family:Arial,sans-serif;padding:18px
 }
-.container{max-width:500px;margin:auto}
+.container{max-width:520px;margin:auto}
 h1{text-align:center;color:#8b9cff}
 .card{
- background:#171f35;padding:20px;
- border-radius:18px;margin-top:20px;
+  background:#171f35;padding:20px;
+  border-radius:18px;margin-top:20px
 }
-.upload{
- border:2px dashed #6475c9;padding:25px;
- text-align:center;border-radius:14px;
- cursor:pointer;
-}
+label{display:block;margin-top:20px;font-weight:bold}
 input,textarea,select{
- width:100%;padding:14px;margin-top:10px;
- border:1px solid #34415f;border-radius:10px;
- background:#0e1629;color:white;font-size:16px;
+  width:100%;padding:14px;margin-top:10px;
+  border:1px solid #394765;border-radius:12px;
+  background:#0f172a;color:white;font-size:16px
 }
+textarea{min-height:100px}
 button{
- width:100%;padding:15px;margin-top:15px;
- border:0;border-radius:10px;
- background:#536dfe;color:white;
- font-size:16px;font-weight:bold;
+  width:100%;padding:16px;margin-top:15px;
+  border:0;border-radius:12px;
+  background:#536dfe;color:white;
+  font-size:17px;font-weight:bold
 }
 button:disabled{opacity:.5}
-img{max-width:100%;max-height:300px;
- display:none;margin:15px auto;border-radius:12px}
-small{color:#aab4ce}
+img,video{width:100%;margin-top:15px;border-radius:12px}
+#status{margin-top:18px;text-align:center;color:#a5b4fc}
+.small{color:#aab4ce;font-size:13px;line-height:1.5}
 </style>
 </head>
 <body>
 <div class="container">
+
 <h1>🎬 Sourav AI Studio</h1>
 <p style="text-align:center">Make Your Photo Talk With AI</p>
 
 <div class="card">
-<h3>📸 Upload Your Photo</h3>
-<label class="upload" for="photo">
-Choose Your Photo
+
+<label>📸 Upload Your Photo</label>
 <input type="file" id="photo" accept="image/*">
-</label>
-<img id="preview">
+<img id="preview" hidden>
 
-<h3>💬 What Should Your Photo Say?</h3>
-<textarea id="message" rows="4"
-placeholder="Hello Sumit, kya kar rahe ho? Sab thik hai na?"></textarea>
+<label>💬 What Should Your Photo Say?</label>
+<textarea id="dialogue"
+placeholder="Hello Sumit, kya kar rahe ho?"></textarea>
 
-<h3>🌐 Select Language</h3>
+<label>🌐 Select Language</label>
 <select id="language">
 <option value="hi-IN">Hindi</option>
 <option value="en-US">English</option>
 </select>
 
-<h3>🎤 Voice</h3>
-<select id="voice">
-<option value="male">Male</option>
-<option value="female">Female</option>
-</select>
+<label>🎤 Voice Preview</label>
+<button onclick="previewVoice()">🔊 Preview Voice</button>
 
-<button onclick="speak()">🔊 Preview Voice</button>
-<button onclick="generate()">✨ Generate Video</button>
-<p id="status" style="text-align:center"></p>
+<label>🎵 Upload Voice Audio</label>
+<input type="file" id="audio" accept="audio/*">
+<p class="small">
+Video banane ke liye dialogue ki recorded audio file
+upload karein. Preview Voice sirf sunne ke liye hai.
+</p>
+
+<audio id="audioPreview" controls hidden
+style="width:100%;margin-top:15px"></audio>
+
+<button id="generate" onclick="generateVideo()">
+✨ Generate Video
+</button>
+
+<p id="status">Photo aur audio upload karein.</p>
+
+<video id="result" controls hidden></video>
+
+<a id="download" hidden download="Sourav-AI-Video.mp4">
+<button>⬇️ Download Video</button>
+</a>
+
 </div>
-<p style="text-align:center;color:#8994ad">
+<p style="text-align:center;color:#9ca3af">
 Made with Sourav AI ❤️
 </p>
 </div>
 
 <script>
-const photo=document.getElementById('photo');
-const preview=document.getElementById('preview');
+const API =
+"https://developer26-neuralyx-wav2lip.hf.space";
 
-photo.addEventListener('change',()=>{
+const photo = document.getElementById("photo");
+const audio = document.getElementById("audio");
+const statusText = document.getElementById("status");
+
+photo.addEventListener("change",()=>{
  const file=photo.files[0];
  if(!file)return;
- preview.src=URL.createObjectURL(file);
- preview.style.display='block';
+ const img=document.getElementById("preview");
+ img.src=URL.createObjectURL(file);
+ img.hidden=false;
 });
 
-function speak(){
- const text=document.getElementById('message').value.trim();
- if(!text){alert('Pehle dialogue likho');return;}
- if(!('speechSynthesis' in window)){
- alert('Voice preview is not supported in this browser');return;
+audio.addEventListener("change",()=>{
+ const file=audio.files[0];
+ if(!file)return;
+ const player=document.getElementById("audioPreview");
+ player.src=URL.createObjectURL(file);
+ player.hidden=false;
+});
+
+function previewVoice(){
+ const text=document.getElementById("dialogue").value;
+ if(!text.trim()){
+  alert("Pehle dialogue likho");
+  return;
+ }
+ if(!window.speechSynthesis){
+  alert("Voice preview supported nahi hai");
+  return;
  }
  speechSynthesis.cancel();
- const utterance=new SpeechSynthesisUtterance(text);
- utterance.lang=document.getElementById('language').value;
- const voices=speechSynthesis.getVoices();
- const lang=utterance.lang;
- const matching=voices.find(v=>v.lang===lang);
- if(matching)utterance.voice=matching;
- speechSynthesis.speak(utterance);
+ const speech=new SpeechSynthesisUtterance(text);
+ speech.lang=document.getElementById("language").value;
+ speechSynthesis.speak(speech);
 }
 
-function generate(){
- if(!photo.files.length){
- alert('Pehle photo upload karo');return;
+async function generateVideo(){
+ const imageFile=photo.files[0];
+ const audioFile=audio.files[0];
+
+ if(!imageFile){
+  alert("Pehle photo upload karo");
+  return;
  }
- if(!document.getElementById('message').value.trim()){
- alert('Dialogue likho');return;
+ if(!audioFile){
+  alert("Pehle dialogue ki audio file upload karo");
+  return;
  }
- document.getElementById('status').innerText=
- 'Photo aur dialogue ready hain. Video generation ke liye AI engine connect karna baaki hai.';
+
+ const btn=document.getElementById("generate");
+ btn.disabled=true;
+ statusText.textContent="AI server se connection ho raha hai...";
+
+ try{
+  const form=new FormData();
+  form.append("image",imageFile);
+  form.append("audio",audioFile);
+
+  statusText.textContent="AI video bana raha hai. Wait karo...";
+
+  const response=await fetch(API+"/generate",{
+   method:"POST",
+   body:form
+  });
+
+  if(!response.ok){
+   throw new Error("AI server error: "+response.status);
+  }
+
+  const videoBlob=await response.blob();
+
+  if(videoBlob.size===0){
+   throw new Error("Video file empty hai");
+  }
+
+  const videoURL=URL.createObjectURL(videoBlob);
+  const result=document.getElementById("result");
+  result.src=videoURL;
+  result.hidden=false;
+
+  const download=document.getElementById("download");
+  download.href=videoURL;
+  download.hidden=false;
+
+  statusText.textContent="🎉 Video successfully ready!";
+
+ }catch(error){
+  statusText.textContent=
+   "Error: "+error.message+
+   ". Server sleeping ya connection unavailable ho sakta hai.";
+ }finally{
+  btn.disabled=false;
+ }
 }
 </script>
 </body>

@@ -1,0 +1,119 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sourav AI Talking Photo</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#0b1020;color:white;
+ font-family:Arial,sans-serif;padding:20px;
+}
+.container{max-width:500px;margin:auto}
+h1{text-align:center;color:#8b9cff}
+.card{
+ background:#171f35;padding:20px;
+ border-radius:18px;margin-top:20px;
+}
+.upload{
+ border:2px dashed #6475c9;padding:25px;
+ text-align:center;border-radius:14px;
+ cursor:pointer;
+}
+input,textarea,select{
+ width:100%;padding:14px;margin-top:10px;
+ border:1px solid #34415f;border-radius:10px;
+ background:#0e1629;color:white;font-size:16px;
+}
+button{
+ width:100%;padding:15px;margin-top:15px;
+ border:0;border-radius:10px;
+ background:#536dfe;color:white;
+ font-size:16px;font-weight:bold;
+}
+button:disabled{opacity:.5}
+img{max-width:100%;max-height:300px;
+ display:none;margin:15px auto;border-radius:12px}
+small{color:#aab4ce}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🎬 Sourav AI Studio</h1>
+<p style="text-align:center">Make Your Photo Talk With AI</p>
+
+<div class="card">
+<h3>📸 Upload Your Photo</h3>
+<label class="upload" for="photo">
+Choose Your Photo
+<input type="file" id="photo" accept="image/*">
+</label>
+<img id="preview">
+
+<h3>💬 What Should Your Photo Say?</h3>
+<textarea id="message" rows="4"
+placeholder="Hello Sumit, kya kar rahe ho? Sab thik hai na?"></textarea>
+
+<h3>🌐 Select Language</h3>
+<select id="language">
+<option value="hi-IN">Hindi</option>
+<option value="en-US">English</option>
+</select>
+
+<h3>🎤 Voice</h3>
+<select id="voice">
+<option value="male">Male</option>
+<option value="female">Female</option>
+</select>
+
+<button onclick="speak()">🔊 Preview Voice</button>
+<button onclick="generate()">✨ Generate Video</button>
+<p id="status" style="text-align:center"></p>
+</div>
+<p style="text-align:center;color:#8994ad">
+Made with Sourav AI ❤️
+</p>
+</div>
+
+<script>
+const photo=document.getElementById('photo');
+const preview=document.getElementById('preview');
+
+photo.addEventListener('change',()=>{
+ const file=photo.files[0];
+ if(!file)return;
+ preview.src=URL.createObjectURL(file);
+ preview.style.display='block';
+});
+
+function speak(){
+ const text=document.getElementById('message').value.trim();
+ if(!text){alert('Pehle dialogue likho');return;}
+ if(!('speechSynthesis' in window)){
+ alert('Voice preview is not supported in this browser');return;
+ }
+ speechSynthesis.cancel();
+ const utterance=new SpeechSynthesisUtterance(text);
+ utterance.lang=document.getElementById('language').value;
+ const voices=speechSynthesis.getVoices();
+ const lang=utterance.lang;
+ const matching=voices.find(v=>v.lang===lang);
+ if(matching)utterance.voice=matching;
+ speechSynthesis.speak(utterance);
+}
+
+function generate(){
+ if(!photo.files.length){
+ alert('Pehle photo upload karo');return;
+ }
+ if(!document.getElementById('message').value.trim()){
+ alert('Dialogue likho');return;
+ }
+ document.getElementById('status').innerText=
+ 'Photo aur dialogue ready hain. Video generation ke liye AI engine connect karna baaki hai.';
+}
+</script>
+</body>
+</html>
